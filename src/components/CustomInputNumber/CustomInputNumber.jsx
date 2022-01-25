@@ -1,7 +1,7 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef } from "react";
 import PropTypes from 'prop-types';
 import styled from "styled-components";
-
+import useLongPress from "../../helper/hooks/useLongPress";
 
 const CustomInputNumberWrapper = styled.div`
     display: inline-flex;
@@ -11,14 +11,15 @@ const CustomInputNumberWrapper = styled.div`
         width:48px;
         height:48px;
     }
-    margin:50px;
 `;
 
 const NumberInput = styled.input`
-    /* &::-webkit-outer-spin-button,
+
+    &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {
        appearance: none;
-    } */
+    }
+    appearance: textfield;
     text-align: center;
     border-radius: 5px;
     border: 2px solid #9e9e9e;
@@ -63,19 +64,30 @@ const CustomInputNumber = ({ min, max, step, name, value, disabled, onChange, on
     const canAdd = value < max;
     const canMinus = value > min;
 
+    const handleAdd = useCallback(() => {
+        refInput.current.stepUp();
+        dispatchInputEvent();
+    }, [refInput]);
+
+    const handleMinus = useCallback(() => {
+        refInput.current.stepDown();
+        dispatchInputEvent();
+    }, [refInput]);
+
+    const minusLongPressEvent = useLongPress(handleMinus, { isStop: !canMinus });
+    const addLongPressEvent = useLongPress(handleAdd, { isStop: !canAdd });
+
     const dispatchInputEvent = useCallback(() => {
         const event = new Event("input", { bubbles: true });
         refInput.current.dispatchEvent(event);
     }, [refInput]);
-    console.log(value)
-    console.log(step)
+
     return (
         <CustomInputNumberWrapper>
 
-            <CustomButton disabled={disabled || !canMinus} className="square" onClick={() => {
-                refInput.current.stepDown(step);
-                dispatchInputEvent();
-            }}><i className="fas fa-minus"></i></CustomButton>
+            <CustomButton  {...minusLongPressEvent} disabled={disabled || !canMinus} className="square" onClick={handleMinus}>
+                <i className="fas fa-minus"></i>
+            </CustomButton>
 
             <NumberInput
                 ref={refInput}
@@ -84,16 +96,15 @@ const CustomInputNumber = ({ min, max, step, name, value, disabled, onChange, on
                 disabled={disabled}
                 value={value}
                 name={name}
-                // step={step}
+                step={step}
                 max={max}
                 min={min}
                 className="square"
                 type='number'
             />
-            <CustomButton disabled={disabled || !canAdd} className="square" onClick={() => {
-                refInput.current.stepUp(step);
-                dispatchInputEvent();
-            }}><i className="fas fa-plus"></i></CustomButton>
+            <CustomButton {...addLongPressEvent} disabled={disabled || !canAdd} className="square" onClick={handleAdd}>
+                <i className="fas fa-plus"></i>
+            </CustomButton>
         </CustomInputNumberWrapper >
 
     )
@@ -108,6 +119,5 @@ CustomInputNumber.prototype = {
     onChange: PropTypes.func.isRequired,
     onBlur: PropTypes.func.isRequired,
 }
-
 
 export default CustomInputNumber;
